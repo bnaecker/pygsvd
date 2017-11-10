@@ -77,7 +77,7 @@ def gsvd(A, B, extras=''):
     # Copy the input arrays, of the right datatype.
     # The LAPACK routine stores R inside A and/or B, so we copy to
     # avoid modifying the caller's arrays.
-    dtype = np.complex if (np.iscomplexobj(A) or np.iscomplexobj(B)) else np.double
+    dtype = np.common_type(A, B)
     Ac = np.array(A, copy=True, dtype=dtype, order='C', ndmin=2)
     Bc = np.array(B, copy=True, dtype=dtype, order='C', ndmin=2)
 

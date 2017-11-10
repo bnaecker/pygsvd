@@ -55,3 +55,18 @@ def test_return_extras():
             # Compare each extra output to the expected
             for each in combo:
                 assert np.allclose(out[each], matrices[each])
+
+def test_complex():
+    '''Verify that the routine handles complex inputs correctly.
+
+    If either one of the arrays is complex, the complex version of the
+    LAPACK routine should be called (zggsvd3). The returns singular
+    values are always real, but the returned matrices should be complex
+    as well.
+    '''
+    x = np.arange(10).reshape(5, 2)
+    y = np.array(x, copy=True, dtype=np.complex)
+    c, s, *matrices = gsvd.gsvd(x, y, extras='uvq')
+    assert c.dtype == np.double # Singular values are always real
+    for matrix in matrices:
+        assert np.iscomplexobj(matrix)
