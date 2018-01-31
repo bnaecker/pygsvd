@@ -8,12 +8,10 @@ gsvd_extension = Extension(
                     ['src/_gsvd.c'],
                     include_dirs=[
                             np.get_include(), 
-                            '/usr/local/include',
-                            '/usr/local/Cellar/lapack/3.8.0/include'
+                            '/usr/local/include'
                         ],
                     library_dirs=[
-                            '/usr/local/lib',
-                            '/usr/local/Cellar/lapack/3.8.0/lib'
+                            '/usr/local/lib'
                             ],
                     libraries=['lapacke'],
                     extra_compile_args = [define_args])

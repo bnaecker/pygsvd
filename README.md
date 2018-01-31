@@ -1,4 +1,4 @@
-# `gsvd.py`
+# `pygsvd.py`
 
 A Python wrapper to the LAPACK generalized singular value decomposition.
 
@@ -6,20 +6,20 @@ A Python wrapper to the LAPACK generalized singular value decomposition.
 
 ## Overview
 
-The `gsvd` module exports a single function `gsvd`, which computes the
+The `pygsvd` module exports a single function `gsvd`, which computes the
 generalized singular value decomposition (GSVD) of a pair of matrices,
 `A` and `B`. The [GSVD](https://en.wikipedia.org/wiki/Generalized_singular_value_decomposition)
 is a joint decomposition useful in for computing regularized solutions
 to ill-posed least-squares problems, as well as dimensionality reduction
 and clustering.
 
-The `gsvd` module is very simple: it just wraps the underlying LAPACK
+The `pygsvd` module is very simple: it just wraps the underlying LAPACK
 routine `ggsvd3`, both the double-precision (`dggsvd3`) and complex-double
 precision versions (`zggsvd3`).
 
 ## Building
 
-Because the `gsvd` module wraps a LAPACK routine itself, it is provded
+Because the `pygsvd` module wraps a LAPACK routine itself, it is provded
 as a Python and NumPy extension module. The module must be compiled,
 and doing so requires a LAPACK header and a shared library. The module
 currently supports both the standard C bindings to LAPACK (called 
@@ -55,13 +55,13 @@ Or via `pip` as:
 
 The GSVD of a pair of NumPy ndarrays `a` and `b` can be computed as:
 
-	>>> c, s, r = gsvd.gsvd(a, b)
+	>>> c, s, r = pygsvd.gsvd(a, b)
 
 This returns the generalized singular values, in `c` and `s`, and the
 upper triangular matrix `r`. Optionally, the transformation matrices
 `u`, `v`, and `q` may also be computed. E.g.:
 
-	>>> c, s, r, q = gsvd.gsvd(a, b, extras='q')
+	>>> c, s, r, q = pygsvd.gsvd(a, b, extras='q')
 
 also returns the right generalized singular vectors of `a` and `b`.
 
