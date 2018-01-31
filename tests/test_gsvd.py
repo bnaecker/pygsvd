@@ -1,6 +1,6 @@
 import itertools
 
-import gsvd
+import pygsvd
 import numpy as np
 import pytest
 
@@ -13,7 +13,7 @@ def test_gsvd_computation():
     matrices = tuple(map(np.loadtxt, 
             ('{}.txt'.format(x) for x in 
             ('a', 'b', 'c', 's', 'r', 'u', 'v', 'q'))))
-    outputs = gsvd.gsvd(matrices[0], matrices[1], extras='uvq')
+    outputs = pygsvd.gsvd(matrices[0], matrices[1], extras='uvq')
     for xin, xout in zip(matrices[2:], outputs):
         assert np.allclose(xin, xout)
 
@@ -22,16 +22,16 @@ def test_same_columns():
     have a different number of columns.
     '''
     with pytest.raises(ValueError):
-        gsvd.gsvd(np.arange(10).reshape(5, 2), np.arange(10).reshape(2, 5))
+        pygsvd.gsvd(np.arange(10).reshape(5, 2), np.arange(10).reshape(2, 5))
 
 def test_dimensions():
     '''Verify that the input succeeds with 1D arrays (which are promoted
     to 2D), and raises a ValueError for 3+D arrays.
     '''
     x = np.arange(10)
-    gsvd.gsvd(x, x)
+    pygsvd.gsvd(x, x)
     with pytest.raises(ValueError):
-        gsvd.gsvd(x.reshape(5, 2, 1), x.reshape(5, 2, 1))
+        pygsvd.gsvd(x.reshape(5, 2, 1), x.reshape(5, 2, 1))
 
 def test_return_extras():
     '''Verify that the extra arrays are returned as expected.'''
@@ -50,7 +50,7 @@ def test_return_extras():
 
             # Compute GSVD including the extras, assigned to a dict
             out = dict(zip(('c', 's', 'r') + combo, 
-                    gsvd.gsvd(matrices['a'], matrices['b'], extras=ex)))
+                    pygsvd.gsvd(matrices['a'], matrices['b'], extras=ex)))
 
             # Compare each extra output to the expected
             for each in combo:
@@ -66,7 +66,7 @@ def test_complex():
     '''
     x = np.arange(10).reshape(5, 2)
     y = np.array(x, copy=True, dtype=np.complex)
-    c, s, *matrices = gsvd.gsvd(x, y, extras='uvq')
+    c, s, r, u, v, q = pygsvd.gsvd(x, y, extras='uvq')
     assert c.dtype == np.double # Singular values are always real
-    for matrix in matrices:
+    for matrix in (r, u, v, q):
         assert np.iscomplexobj(matrix)

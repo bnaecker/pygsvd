@@ -1,6 +1,7 @@
 __pycache__
 *.so
 build
-gsvd.egg-info
+*.egg-info
 *.swp
 .cache
+*.pyc

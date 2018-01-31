@@ -80,7 +80,11 @@ static PyObject *gsvd(PyObject *self, PyObject *args) {
 	 * gsvd(A, B, U, V, Q, C, S, iwork, 
 	 * 		compute_u, compute_v, compute_q, call_complex)
 	 */
+#ifdef BUILD_WITH_PYTHON3
 	const char arg_format[] = "O!O!O!O!O!O!O!O!ppp";
+#else
+	const char arg_format[] = "O!O!O!O!O!O!O!O!iii";
+#endif
 	if (!PyArg_ParseTuple(args, arg_format,
 				&PyArray_Type, &A,
 				&PyArray_Type, &B,
@@ -182,6 +186,7 @@ static PyMethodDef GsvdMethods[] = {
 	{NULL, NULL, 0, NULL }
 };
 
+#ifdef BUILD_WITH_PYTHON3
 /* Definition of the _gsvd module object. */
 static struct PyModuleDef gsvdmodule = {
 	PyModuleDef_HEAD_INIT,
@@ -190,11 +195,22 @@ static struct PyModuleDef gsvdmodule = {
 	-1,
 	GsvdMethods
 };
+#endif
 
 /* Initialize the module. */
 PyMODINIT_FUNC
+#ifdef BUILD_WITH_PYTHON3
 PyInit__gsvd(void) {
+#else
+init_gsvd(void) {
+#endif
 	import_array();
+#ifdef BUILD_WITH_PYTHON3
 	return PyModule_Create(&gsvdmodule);
+#else
+	Py_InitModule3("_gsvd",
+            GsvdMethods,
+            "Compute the generalized singular value decomposition of two matrices.");
+#endif
 };
 

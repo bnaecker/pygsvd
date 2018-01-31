@@ -1,18 +1,25 @@
+import sys
 from setuptools import setup, Extension, find_packages
 import numpy as np
 
+define_args = '-DBUILD_WITH_PYTHON3' if sys.version.startswith('3') else ''
 gsvd_extension = Extension(
                     '_gsvd', 
                     ['src/_gsvd.c'],
                     include_dirs=[
                             np.get_include(), 
-                            '/usr/local/include'
+                            '/usr/local/include',
+                            '/usr/local/Cellar/lapack/3.8.0/include'
                         ],
-                    library_dirs=['/usr/local/lib'],
-                    libraries=['lapacke'])
+                    library_dirs=[
+                            '/usr/local/lib',
+                            '/usr/local/Cellar/lapack/3.8.0/lib'
+                            ],
+                    libraries=['lapacke'],
+                    extra_compile_args = [define_args])
 
 setup(
-        name='gsvd',
+        name='pygsvd',
         version='0.0.1',
         author='Benjamin Naecker',
         author_email='bnaecker@fastmail.com',
