@@ -41,11 +41,11 @@ separated by a `:`. You can also set these on the command line when building.
 For example, to use the LAPACK library, with a header in `/some/dir/`
 and the library in `/some/libdir/`, you could run:
 
-	$ python3 setup.py build_ext --include-dirs="/some/dir" --library_dirs="/some/libdir"
+	$ python3 setup.py build_ext --include-dirs="/some/dir" --library-dirs="/some/libdir"
 
 Then you can install the module either as usual or in develop mode as:
 
- 	$ python3 setup.py install/develop
+ 	$ python3 setup.py {install,develop}
 
 Or via `pip` as:
 
@@ -55,29 +55,31 @@ Or via `pip` as:
 
 The GSVD of a pair of NumPy ndarrays `a` and `b` can be computed as:
 
-	>>> c, s, r = pygsvd.gsvd(a, b)
+	>>> c, s, x = pygsvd.gsvd(a, b)
 
-This returns the generalized singular values, in `c` and `s`, and the
-upper triangular matrix `r`. Optionally, the transformation matrices
-`u`, `v`, and `q` may also be computed. E.g.:
+This returns the generalized singular values, in arrays `c` and `s`, and the
+right generalized singular vectors in `x`. Optionally, the transformation matrices
+`u` and` `v` may also be computed. E.g.:
 
-	>>> c, s, r, q = pygsvd.gsvd(a, b, extras='q')
+	>>> c, s, x, u = pygsvd.gsvd(a, b, extras='u')
 
-also returns the right generalized singular vectors of `a` and `b`.
+also returns the left generalized singular vectors of `a`.
+
+By default, the matrices `u` and `v`, if returned, are of shape `(m, n)` and
+`(p, n)`. Using the optional argument `full_matrices` is set to `True`, then
+the matrices are square, of shape `(m, m)` and `(p, p)`.
 
 ## The generalized singular value decomposition
 
 The GSVD is a joint decomposition of a pair of matrices. Given matrices
 `A` with shape `(m, n)` and `B` with shape `(p, n)`, it computes:
 
-        U.T A Q = D_1 (0 R)
-        V.T B Q = D_2 (0 R)
+        A = U*C*X.T
+        B = V*S*X.T
 
-where `U`, `V` and `Q` are unitary matrices, with shapes `(m, m)`, `(p, p)`,
-and `(n, n)`, respectively. `D_1` and `D_2` are "diagonal" (possibly non-square) 
-matrices containing the generalized singular value pairs, and `R` is 
-upper-triangular and non-singular, with shape `(r, r)`, where `r` is the
-effective numerical rank of `(A.T; B.T).T`.
+where `U` and `V` are unitary matrices, with shapes `(m, m)` and `(p, p)`,
+and `X` is shaped as `(n, n)`, respectively. `C` and `S` are diagonal (possibly non-square)
+matrices containing the generalized singular value pairs.
 
 This decomposition has many uses, including least-squares fitting of ill-posed
 problems. For example, letting `B` be the "second derivative" operator one can
