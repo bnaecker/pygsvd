@@ -1,21 +1,21 @@
 import numpy as np
 import _gsvd
 
-def gsvd(A, B, extras=''):
+def gsvd(A, B, full_matrices=False, extras='uv'):
     '''Compute the generalized singular value decomposition of
-    a pair of matrices ``A`` and ``B``.
+    a pair of matrices ``A`` of shape ``(m, n)`` and ``B`` of
+    shape ``(p, n)``
 
     The GSVD is defined as a joint decomposition, as follows.
-    Letting ``k + l`` be the effective numerical rank of
-    ``(A.T; B.T).T``,
+        
+        A = U*C*X.T
+        B = V*S*X.T
+    
+    where
 
-        U.T A Q = D_1 (0 R)
-        V.T B Q = D_2 (0 R)
+        C.T*C + S.T*S = I
 
-    where ``U``, ``V`` and ``Q`` are unitary matrices,
-    ``D_1`` and ``D_2`` are diagonal (possibly non-square)
-    matrices containing the generalized singular value pairs,
-    and ``R`` is upper-triangular and non-singular.
+    where ``U`` and ``V`` are unitary matrices.
         
     Parameters
     ----------
@@ -23,22 +23,27 @@ def gsvd(A, B, extras=''):
         Input matrices on which to perform the decomposition. Must
         be no more than 2D (and will be promoted if only 1D). The
         matrices must also have the same number of columns.
+    full_matrices : bool, optional
+        If ``True``, the returned matrices ``U`` and ``V`` have
+        at most ``p`` columns and ``C`` and ``S`` are of length ``p``.
     extras : str, optional
         A string indicating which of the orthogonal transformation
         matrices should be computed. By default, this only computes 
         the generalized singular values in ``C`` and ``S``, and the 
-        diagonalized matrix ``R``. The string may contain any of 
-        'u', 'v', or 'q' to indicate that the corresponding matrix 
-        is to be computed.
+        right generalized singular vectors in ``X``. The string may
+        contain either 'u' or 'v' to indicate that the corresponding
+        matrix is to be computed.
 
     Returns
     -------
     C : ndarray
-        The generalized singular values of ``A``.
+        The generalized singular values of ``A``. These are returned
+        in decreasing order.
     S : ndarray
-        The generalized singular values of ``B``.
-    R : ndarray
-        The diagonalized matrix ``R``.
+        The generalized singular values of ``B``. These are returned
+        in increasing order.
+    X : ndarray
+        The right generalized singular vectors of ``A`` and ``B``.
     U : ndarray
         The left generalized singular vectors of ``A``, with
         shape ``(m, m)``. This is only returned if 
@@ -47,10 +52,6 @@ def gsvd(A, B, extras=''):
         The left generalized singular vectors of ``B``, with
         shape ``(p, p)``. This is only returned if 
         ``'v' in extras`` is True.
-    Q : ndarray
-        The right generalized singular vectors of ``A`` and ``B``,
-        with shape ``(n, n)``. This is only returned if 
-        ``'q' in extras`` is True.
 
     Raises
     ------
@@ -62,68 +63,73 @@ def gsvd(A, B, extras=''):
 
     Notes
     -----
-    The LAPACK interface for this routine computes slightly different
-    matrices than the MATLAB version. First, the singular values are
-    returned in decreasing order in this function, whereas MATLAB's
-    returns them in increasing order. Second, the matrix ``X`` in
-    MATLAB's version is not computed. It can be computed as:
+    This routine is intended to be as similar as possible to the
+    decomposition provided by Matlab and Octave. Note that this is slightly
+    different from the decomposition as put forth in Golub and Van Loan [1],
+    and that this routine is thus not directly a wrapper for the underlying
+    LAPACK routine.
 
-        X = (R.dot(Q.T).T
+    One important difference between this routine and that provided by
+    Matlab is that this routine returns the singular values in decreasing
+    order, for consistency with NumPy's ``svd`` routine.
 
-    Also note that in many cases columns of the returned matrices
-    can differ from those returned by MATLAB's routine by a factor
-    of -1.
+    References
+    ----------
+    [1] Golub, G., and C.F. Van Loan, 2013, Matrix Computations, 4th Ed.
     '''
-    # Copy the input arrays, of the right datatype.
     # The LAPACK routine stores R inside A and/or B, so we copy to
     # avoid modifying the caller's arrays.
-    dtype = np.common_type(A, B)
+    dtype = np.complex128 if any(map(np.iscomplexobj, (A, B))) else np.double
     Ac = np.array(A, copy=True, dtype=dtype, order='C', ndmin=2)
     Bc = np.array(B, copy=True, dtype=dtype, order='C', ndmin=2)
-
-    # Compute shape
     m, n = Ac.shape
     p = Bc.shape[0]
     if (n != Bc.shape[1]):
         raise ValueError('A and B must have the same number of columns')
 
-    # Determine which arrays are to be computed
-    compute_uvq = tuple(each in extras for each in 'uvq')
-
-    # Allocate arrays on which LAPACK routine operates.
-    # If computing the corresponding transformation matrix,
-    # create a zero array of the right size. If not, make a
-    # dummy array of shape (1, 1).
-    sizes = (m, p, n)
-    U, V, Q = (np.zeros((size, size), dtype=dtype) if compute 
+    # Allocate input arrays to LAPACK routine
+    compute_uv = tuple(each in extras for each in 'uv')
+    sizes = (m, p)
+    U, V = (np.zeros((size, size), dtype=dtype) if compute 
             else np.zeros((1, 1), dtype=dtype)
-            for size, compute in zip(sizes, compute_uvq))
+            for size, compute in zip(sizes, compute_uv))
+    Q = np.zeros((n, n), dtype=dtype)
     C = np.zeros((n,), dtype=np.double)
     S = np.zeros((n,), dtype=np.double)
     iwork = np.zeros((n,), dtype=np.int32)
 
     # Compute GSVD via LAPACK wrapper, returning the effective rank
     k, l = _gsvd.gsvd(Ac, Bc, U, V, Q, C, S, iwork,
-            compute_uvq[0], compute_uvq[1], compute_uvq[2])
+            compute_uv[0], compute_uv[1])
 
-    # Sort the singular values using the sorting information
-    # computed in the LAPACK routine
-    for i in range(k, min(m, k + l)):
-        ix = iwork[i] - 1
-        C[i], C[ix] = C[ix], C[i]
-        S[i], S[ix] = S[ix], S[i]
-
-    # Extract the R matrix stored in Ac and Bc
+    # Compute X
     R = _extract_R(Ac, Bc, k, l)
+    X = R.dot(Q.T).T
 
-    # Convert to diagonals
-    C = np.diag(C)
-    S = np.diag(S)
+    # Sort and sub-sample if needed
+    rank = k + l
+    ix = np.argsort(C[:rank])[::-1]
+    C = C[ix]
+    S = S[ix]
+    X[:, :rank] = X[:, ix]
+    if compute_uv[0]:
+        U[:, :rank] = U[:, ix]
+    if compute_uv[1]:
+        # Handle rank-deficient inputs
+        if k:
+            V = np.roll(V, k, axis=1)
+        V[:, :rank] = V[:, ix]
+    if not full_matrices:
+        X = X[:, :rank]
+        if compute_uv[0]:
+            U = U[:, :rank]
+        if compute_uv[1]:
+            V = V[:, :rank]
 
-    # Return outputs
-    outputs = (C, S, R) + tuple(arr for arr, compute in 
-            zip((U, V, Q), compute_uvq) if compute)
+    outputs = (C, S, X) + tuple(arr for arr, compute in 
+            zip((U, V), compute_uv) if compute)
     return outputs
+
 
 def _extract_R(A, B, k, l):
     '''Extract the diagonalized matrix R from A and/or B.

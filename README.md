@@ -9,7 +9,7 @@ A Python wrapper to the LAPACK generalized singular value decomposition.
 The `pygsvd` module exports a single function `gsvd`, which computes the
 generalized singular value decomposition (GSVD) of a pair of matrices,
 `A` and `B`. The [GSVD](https://en.wikipedia.org/wiki/Generalized_singular_value_decomposition)
-is a joint decomposition useful in for computing regularized solutions
+is a joint decomposition useful for computing regularized solutions
 to ill-posed least-squares problems, as well as dimensionality reduction
 and clustering.
 
@@ -19,11 +19,11 @@ precision versions (`zggsvd3`).
 
 ## Building
 
-Because the `pygsvd` module wraps a LAPACK routine itself, it is provded
+Because the `pygsvd` module wraps a LAPACK routine itself, it is provided
 as a Python and NumPy extension module. The module must be compiled,
 and doing so requires a LAPACK header and a shared library. The module
 currently supports both the standard C bindings to LAPACK (called 
-[LAPACKE](http://www.netlib.org/lapack/lapacke.html),
+[LAPACKE](http://www.netlib.org/lapack/lapacke.html)),
 and those provided by Intel's Math Kernel Library. Notably it does *not*
 support Apple's Accelerate framework, which seems to be outdated and
 differs in several subtle and annoying ways.

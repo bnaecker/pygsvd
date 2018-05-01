@@ -31,8 +31,7 @@
  * A and B. The routine should be called from Python with the 
  * following signature:
  *
- * gsvd(A, B, U, V, Q, C, S, iwork, 
- * 		compute_u, compute_v, compute_q)
+ * gsvd(A, B, U, V, Q, C, S, iwork, compute_u, compute_v)
  *
  * Where A and B are the input matrices whose GSVD is computed.
  * On exit from the routine, these arrays store portions of the
@@ -56,7 +55,6 @@ static PyObject *gsvd(PyObject *self, PyObject *args) {
     PyObject *ret = NULL; // tuple returned with effective rank information
 	int compute_u = 0;
 	int compute_v = 0;
-	int compute_q = 0;
 
 	/* Shapes of various objects. */
 	int m = 0; // # rows of arr1
@@ -73,7 +71,7 @@ static PyObject *gsvd(PyObject *self, PyObject *args) {
 	/* Flags to LAPACK routine for computing extra matrices. */
 	char jobu = 'N';
 	char jobv = 'N';
-	char jobq = 'N';
+	char jobq = 'Q';
 
 	/* Unpack input arguments.
 	 * Should be called as:
@@ -81,9 +79,9 @@ static PyObject *gsvd(PyObject *self, PyObject *args) {
 	 * 		compute_u, compute_v, compute_q, call_complex)
 	 */
 #ifdef BUILD_WITH_PYTHON3
-	const char arg_format[] = "O!O!O!O!O!O!O!O!ppp";
+	const char arg_format[] = "O!O!O!O!O!O!O!O!pp";
 #else
-	const char arg_format[] = "O!O!O!O!O!O!O!O!iii";
+	const char arg_format[] = "O!O!O!O!O!O!O!O!ii";
 #endif
 	if (!PyArg_ParseTuple(args, arg_format,
 				&PyArray_Type, &A,
@@ -95,18 +93,15 @@ static PyObject *gsvd(PyObject *self, PyObject *args) {
 				&PyArray_Type, &beta,
 				&PyArray_Type, &iwork,
 				&compute_u,
-				&compute_v,
-				&compute_q)) {
+				&compute_v)) {
 		return NULL;
 	}
 
-	/* Update variables indicating whether to compute U, V, and Q. */
+	/* Update variables indicating whether to compute U and V. */
 	if (compute_u)
 		jobu = 'U';
 	if (compute_v)
 		jobv = 'V';
-	if (compute_q)
-		jobq = 'Q';
 
 	/* Get and verify input array sizes. */
 	if ( (PyArray_NDIM(A) != 2) || (PyArray_NDIM(B) != 2) ) {

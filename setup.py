@@ -18,7 +18,7 @@ gsvd_extension = Extension(
 
 setup(
         name='pygsvd',
-        version='0.0.1',
+        version='0.0.2',
         author='Benjamin Naecker',
         author_email='bnaecker@fastmail.com',
         description='Generalized singular value decomposition of NumPy arrays.',
