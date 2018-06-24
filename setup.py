@@ -44,5 +44,6 @@ setup(
         ext_modules=[gsvd_extension],
         install_requires=['numpy>=1.11'],
         license='GNU Public License v3',
+        py_modules=['pygsvd'],
     )
         
